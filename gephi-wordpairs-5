@@ -1,0 +1,76 @@
+#this script prepares a single .txt file for use in gephi
+#This Python script spits out each stemmed non-stopword as a node, and counts word-pairs as edges.
+#That is, an edge occurs whenever one word occurs within 4 words of another word.
+#The edge weight increases with the frequency of the word-pair.
+#you will probably have to hand=prune the resulting file and make sure the last few tags were added.
+
+import os,nltk,os.path,re,string
+from nltk.stem.porter import PorterStemmer
+ps=PorterStemmer()
+
+listing=os.listdir('---path here----')
+
+filename = open('----filename----.txt','r')
+fcontent=filename.read()
+filename.close()
+
+outText=open('----filename----.graphml','w')
+outText.write('<?xml version="1.0" encoding="UTF-8"?> \n <graphml xmlns="http://graphml.graphdrawing.org/xmlns"> \n <key id="d0" for="edge" attr.name="weight" attr.type="double"/> \n <graph id="G" edgedefault="undirected">')
+ 
+fs = fcontent.split()
+stemmed=[]
+wordlist=[]
+
+for word in fs:
+    word = ps.stem(word.strip(string.punctuation).lower())
+    if word not in nltk.corpus.stopwords.words('english') and len(word)<15:
+        stemmed.append(word)
+        if word not in wordlist:
+            wordlist.append(word)
+            outText.write('<node id="' + word + '"/>' + '\n')
+        else:
+            pass
+    else:
+        pass
+
+ls=len(stemmed)
+
+counter = -1
+pairlist=[]
+pairlistnodupes=[]
+    
+for word in stemmed:
+    pl = stemmed.index(word)
+    if pl < ls:
+        adjword1 = stemmed[pl+1]
+        adjword2 = stemmed[pl+2]
+        adjword3 = stemmed[pl+3]
+        adjword4 = stemmed[pl+4]
+        pair1 = 'source="' + word + '" target="' + adjword1
+        pairlist.append(pair1)
+        pair2 = 'source="' + word + '" target="' + adjword2
+        pairlist.append(pair2)
+        pair3 = 'source="' + word + '" target="' + adjword3
+        pairlist.append(pair3)
+        pair4 = 'source="' + word + '" target="' + adjword4
+        pairlist.append(pair4)
+    else:
+        print 'stems done'
+    
+for pair in pairlist:
+    counter = counter + 1
+    occur = pairlist.count(pair)
+    if occur > 1:
+        if pair not in pairlistnodupes:
+                pairlistnodupes.append(pair)
+    else:
+        outText.write('<edge id="'+ str(counter) + '" ' + pair + '"><data key="d0"></data></edge>' + '\n')
+
+for pair in pairlistnodupes:
+    counter = counter + 1
+    occur = pairlist.count(pair)
+    outText.write('<edge id="'+ str(counter) + '" ' + pair + '"><data key="d0">' + str(occur) + '.0</data></edge>' + '\n')
+
+outText.write('  </graph></graphml>')
+outText.close()
+print 'donesies'
